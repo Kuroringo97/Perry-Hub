@@ -1,138 +1,531 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Perry Hub By Kuro</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Perry Hub By Kuro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root { --accent: #00ffcc; --bg: #0a0a0c; --panel: #111114; --border: rgba(255, 255, 255, 0.06); }
+        body { background-color: var(--bg); color: #d1d1d6; font-family: 'Inter', sans-serif; overflow: hidden; letter-spacing: -0.01em; }
+        .glass-nav { background: rgba(10, 10, 12, 0.9); backdrop-filter: blur(16px); border-bottom: 1px solid var(--border); }
+        .source-card { background: var(--panel); border: 1px solid var(--border); transition: all 0.2s ease; }
+        .source-card:hover { border-color: rgba(0, 255, 204, 0.3); background: #16161a; }
+        #webFrame { width: 100%; height: calc(100vh - 56px); border: none; background: #000; }
+        .tab-btn { position: relative; font-weight: 500; color: #71717a; transition: color 0.2s ease; cursor: pointer; }
+        .tab-btn.active { color: var(--accent); }
+        .tab-btn.active::after { content: ''; position: absolute; bottom: -20px; left: 0; width: 100%; height: 2px; background: var(--accent); }
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 10px; }
+        
+        /* Fixed Select Readability */
+        select option {
+            background-color: #1a1a1e !important;
+            color: #ffffff !important;
+            padding: 10px;
+        }
 
-<meta name="description" content="Perry Hub by Kuro — Manga & Anime Vault Interface">
-<meta name="theme-color" content="#00ffcc">
+        .settings-panel { 
+            background: #0d0d0f; 
+            border-left: 1px solid var(--border); 
+            transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            z-index: 20;
+        }
 
-<script src="https://cdn.tailwindcss.com"></script>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+        .config-item {
+            background: rgba(255,255,255,0.02);
+            border: 1px solid rgba(255,255,255,0.04);
+            border-radius: 4px;
+            padding: 10px;
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .config-item:hover {
+            border-color: rgba(0, 255, 204, 0.15);
+            background: rgba(255,255,255,0.03);
+        }
 
-<style>
-:root{--accent:#00ffcc;--bg:#0a0a0c;--panel:#111114;--border:rgba(255,255,255,.06)}
-body{background:var(--bg);color:#d1d1d6;font-family:'Inter',sans-serif;overflow-x:hidden}
-.glass-nav{background:rgba(10,10,12,.9);backdrop-filter:blur(16px);border-bottom:1px solid var(--border)}
-.source-card{background:var(--panel);border:1px solid var(--border);transition:.2s}
-.source-card:hover{border-color:rgba(0,255,204,.3);background:#16161a}
-#webFrame{width:100%;height:calc(100vh - 56px);border:none;background:#000}
-</style>
+        .settings-content-wrapper {
+            width: 288px;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+        .w-72 .settings-content-wrapper {
+            opacity: 1;
+        }
+    </style>
 </head>
-
 <body class="h-screen flex flex-col">
 
-<nav class="h-14 flex items-center justify-between px-4 glass-nav">
-  <button onclick="goHome()" class="text-left">
-    <div class="text-xs font-black text-white uppercase">PERRY HUB</div>
-    <div id="navUserName" class="text-[8px] font-bold text-teal-400 uppercase tracking-widest">CONNECTING</div>
-  </button>
-  <button onclick="openExplorer()" class="px-4 py-2 bg-teal-500/10 text-teal-400 border border-teal-500/20 text-xs font-bold uppercase">
-    VAULT
-  </button>
-</nav>
+    <nav class="h-14 flex items-center justify-between px-4 z-50 glass-nav shrink-0">
+        <div class="flex items-center gap-3 overflow-hidden">
+            <button onclick="goHome()" class="flex flex-col leading-none shrink-0 mr-1 text-left hover:opacity-70 transition-opacity">
+                <span class="text-[10px] font-black tracking-tighter text-white uppercase">PERRY HUB</span>
+                <span id="navUserName" class="text-[8px] font-bold text-teal-400 uppercase tracking-[0.2em]">CONNECTING</span>
+            </button>
+            
+            <div id="aioStatus" class="flex items-center gap-2 px-2.5 py-1 bg-white/[0.03] border border-white/5 rounded-sm overflow-hidden transition-all duration-300">
+                <div class="flex items-center gap-2">
+                    <div id="systemDot" class="w-1.5 h-1.5 rounded-full bg-zinc-600 transition-colors duration-500"></div>
+                    <div class="flex flex-col leading-tight overflow-hidden">
+                        <span id="aioLabel" class="text-[7px] font-black text-zinc-500 uppercase tracking-widest leading-none mb-0.5">System</span>
+                        <span id="aioValue" class="text-[9px] font-bold text-zinc-400 truncate max-w-[70px] sm:max-w-[140px] uppercase">Standby</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="flex items-center gap-2">
+            <button id="homeBtn" onclick="goHome()" class="hidden md:flex items-center gap-2 text-[10px] font-bold text-zinc-500 hover:text-white uppercase tracking-widest px-3 py-2 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                HOME
+            </button>
+            <button onclick="openExplorer()" class="text-[10px] font-black uppercase tracking-[0.2em] px-6 py-2 bg-teal-500/10 text-teal-400 hover:bg-teal-500/20 border border-teal-500/20 rounded-sm transition-all flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20L4 4m16 0L4 20"/></svg>
+                VAULT
+            </button>
+        </div>
+    </nav>
 
-<main class="flex-1 relative bg-black">
-  <div id="emptyState" class="absolute inset-0 flex flex-col items-center justify-center text-center">
-    <h1 id="heroTitle" class="text-2xl text-white uppercase italic">
-      PERRY HUB <span class="text-zinc-600">BY KURO</span>
-    </h1>
-    <p class="text-[9px] text-zinc-500 uppercase tracking-widest italic mt-2">
-      "May our journey end when we isekai'd by truck-kun"
-    </p>
-    <button onclick="openExplorer()" class="mt-8 px-8 py-2 border border-zinc-800 text-zinc-400 uppercase text-xs">
-      Access Archives
-    </button>
-  </div>
+    <main class="flex-1 relative bg-black">
+        <div id="emptyState" class="absolute inset-0 flex flex-col items-center justify-center p-6 text-center z-10">
+            <h1 id="heroTitle" class="text-2xl font-light text-white tracking-tighter mb-2 italic uppercase">PERRY HUB <span class="text-zinc-600">BY KURO</span></h1>
+            <p class="text-[9px] text-zinc-500 uppercase tracking-widest italic mb-10">"May our journey end when we isekai'd by truck-kun"</p>
+            <button onclick="openExplorer()" class="px-8 py-2.5 border border-zinc-800 hover:border-teal-400 text-zinc-400 hover:text-teal-400 text-[10px] font-bold uppercase tracking-widest transition-all">Access Archives</button>
+        </div>
+        <iframe id="webFrame" class="hidden" sandbox="allow-scripts allow-forms allow-same-origin" referrerpolicy="no-referrer-when-downgrade"></iframe>
+    </main>
 
-  <iframe
-    id="webFrame"
-    class="hidden"
-    sandbox="allow-scripts allow-forms allow-same-origin allow-popups allow-top-navigation-by-user-activation"
-    referrerpolicy="no-referrer-when-downgrade">
-  </iframe>
-</main>
+    <div id="explorerModal" class="fixed inset-0 z-[100] bg-[#0a0a0c] flex transition-all duration-300 translate-y-full">
+        <div class="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
+            <header class="px-8 pt-8 shrink-0">
+                <div class="flex justify-between items-end mb-10">
+                    <h1 class="text-xl font-bold text-white uppercase tracking-tight">Waifu <span class="text-teal-400">Vault</span></h1>
+                    <div class="flex items-center gap-4">
+                        <button onclick="refreshFrame()" class="flex items-center gap-1.5 text-zinc-500 hover:text-white transition-colors group">
+                            <span class="text-[9px] font-bold uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">Reload</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
+                        </button>
+                        <button onclick="closeExplorer()" class="text-zinc-500 hover:text-white text-[10px] font-bold uppercase">[ Close ]</button>
+                    </div>
+                </div>
+                <div class="flex gap-10 border-b border-white/5">
+                    <button onclick="switchTab('manga')" id="tabManga" class="tab-btn active pb-4 text-[10px] uppercase tracking-widest">Manga Intel</button>
+                    <button onclick="switchTab('anime')" id="tabAnime" class="tab-btn pb-4 text-[10px] uppercase tracking-widest">Anime Stream</button>
+                    <button onclick="toggleSettings()" id="configTabBtn" class="ml-auto pb-4 text-[10px] uppercase tracking-widest text-zinc-500 hover:text-teal-400 transition-colors">Config</button>
+                </div>
+            </header>
 
-<div id="explorerModal" class="fixed inset-0 bg-black translate-y-full transition-transform duration-300 z-50">
-  <div class="p-6">
-    <div class="flex justify-between mb-4">
-      <h2 class="text-white font-bold uppercase">Vault</h2>
-      <button onclick="closeExplorer()" class="text-zinc-500 text-xs uppercase">Close</button>
+            <div class="px-8 py-6 flex flex-wrap gap-4 items-center shrink-0">
+                <input type="text" id="searchInput" oninput="filterSources()" placeholder="SEARCH ARCHIVES..." class="flex-1 bg-transparent border-b border-white/10 py-2 text-xs focus:border-teal-500 outline-none text-white font-mono uppercase">
+                <select id="langSelect" onchange="filterSources()" class="bg-[#111114] border border-white/10 rounded px-3 py-1.5 text-[9px] font-bold text-white outline-none uppercase cursor-pointer hover:border-teal-500/50 transition-colors">
+                    <option value="all">Global</option>
+                </select>
+            </div>
+
+            <div id="sourceGrid" class="flex-1 overflow-y-auto px-8 pb-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3"></div>
+            
+            <div class="px-8 py-3 bg-black border-t border-white/5 text-[9px] text-zinc-600 flex justify-between items-center shrink-0 font-medium uppercase tracking-widest">
+                <div id="repoStatus">Syncing...</div>
+                <div id="footerUserId" class="font-mono text-[8px] opacity-40">Connecting...</div>
+            </div>
+        </div>
+
+        <div id="settingsPanel" class="settings-panel w-0 overflow-hidden flex flex-col shrink-0">
+            <div class="settings-content-wrapper flex flex-col h-full">
+                <div class="p-6 border-b border-white/5 flex justify-between items-center">
+                    <div>
+                        <h2 class="text-[10px] font-black text-white uppercase tracking-widest leading-none mb-1">User Config</h2>
+                        <span class="text-[7px] text-zinc-600 uppercase font-bold">Cloud Synced Profile</span>
+                    </div>
+                    <button onclick="toggleSettings()" class="p-2 text-zinc-600 hover:text-white transition-colors">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    </button>
+                </div>
+                
+                <div class="flex-1 overflow-y-auto p-6 space-y-8">
+                    <div class="space-y-3">
+                        <span class="text-[8px] font-black text-zinc-600 uppercase tracking-[0.2em] px-1">Preferences</span>
+                        <div class="space-y-2">
+                            <div class="config-item flex items-center justify-between">
+                                <div class="flex flex-col">
+                                    <span class="text-[9px] font-bold text-zinc-300 uppercase leading-none mb-1">NSFW Overlay</span>
+                                    <span class="text-[7px] text-zinc-600 uppercase">Toggle 18+ visibility</span>
+                                </div>
+                                <button onclick="toggleNSFW()" id="nsfwToggleUI" class="w-7 h-3.5 bg-zinc-800 rounded-full relative transition-all duration-300 shrink-0">
+                                    <div id="nsfwKnob" class="absolute left-0.5 top-0.5 w-2.5 h-2.5 bg-zinc-500 rounded-full transition-all duration-300"></div>
+                                </button>
+                            </div>
+
+                            <div class="config-item flex flex-col gap-2">
+                                <span class="text-[9px] font-bold text-zinc-300 uppercase leading-none">Primary Language</span>
+                                <select id="prefLang" onchange="updatePrefLang()" class="w-full bg-[#050507] border border-white/10 rounded px-2 py-2 text-[8px] font-bold text-white outline-none uppercase appearance-none cursor-pointer hover:border-teal-500/50 transition-colors">
+                                    <option value="all">Global (Default)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-3">
+                        <span class="text-[8px] font-black text-zinc-600 uppercase tracking-[0.2em] px-1">Network & DNS</span>
+                        <div class="config-item flex flex-col gap-2">
+                            <div class="flex items-center gap-2 mb-1">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="text-teal-400"><circle cx="12" cy="12" r="10"/><line x1="2" cy="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                                <span class="text-[9px] font-bold text-zinc-300 uppercase leading-none">DNS Provider</span>
+                            </div>
+                            <select id="dnsProvider" onchange="warmDNS()" class="w-full bg-[#050507] border border-white/10 rounded px-2 py-2 text-[8px] font-bold text-white outline-none uppercase appearance-none cursor-pointer hover:border-teal-500/50 transition-colors">
+                                <option value="none">DIRECT (NONE)</option>
+                                <option value="https://dns.google/resolve">GOOGLE DNS</option>
+                                <option value="https://cloudflare-dns.com/dns-query">CLOUDFLARE</option>
+                                <option value="https://dns.quad9.net/dns-query">QUAD9</option>
+                                <option value="https://doh.mullvad.net/dns-query">MULLVAD</option>
+                                <option value="https://dns.adguard-dns.com/dns-query">ADGUARD</option>
+                                <option value="https://dns.nextdns.io">NEXTDNS</option>
+                                <option value="https://doh.controld.com/freedns">CONTROL D</option>
+                                <option value="https://doh.opendns.com/dns-query">OPENDNS</option>
+                                <option value="https://dns.alidns.com/resolve">ALIDNS</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="space-y-3">
+                        <span class="text-[8px] font-black text-zinc-600 uppercase tracking-[0.2em] px-1">Vault Status</span>
+                        <div class="p-3 bg-zinc-900/50 border border-white/5 rounded space-y-2">
+                            <div class="flex items-center gap-2">
+                                <div id="dbStatusDot" class="w-1.5 h-1.5 rounded-full bg-zinc-600"></div>
+                                <span id="dbStatusText" class="text-[8px] text-zinc-500 font-bold font-mono uppercase">Offline</span>
+                            </div>
+                            <div class="flex flex-col gap-1">
+                                <span class="text-[7px] text-zinc-400 font-bold uppercase tracking-tight">Active UID:</span>
+                                <span id="userStatus" class="text-[6px] text-zinc-600 font-mono break-all leading-tight">Syncing...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="p-6 border-t border-white/5">
+                    <button onclick="toggleSettings()" class="w-full py-2.5 bg-zinc-900 border border-white/5 text-[9px] font-black text-zinc-500 hover:text-white hover:bg-zinc-800 transition-all uppercase tracking-widest rounded-sm">Return</button>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <input id="searchInput" oninput="filterSources()" placeholder="SEARCH..."
-      class="w-full bg-transparent border-b border-zinc-700 text-white text-xs py-2 outline-none">
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-    <div id="sourceGrid" class="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"></div>
-  </div>
-</div>
+        // Your specific config for Vercel deployment
+        const firebaseConfig = {
+            apiKey: "AIzaSyAkjGZH-0QvvxvKb4zsEWnyTU0ocjM0Mgk",
+            authDomain: "perry-hub.firebaseapp.com",
+            projectId: "perry-hub",
+            storageBucket: "perry-hub.firebasestorage.app",
+            messagingSenderId: "595059503678",
+            appId: "1:595059503678:web:09f550e59b245880d2d76f",
+            measurementId: "G-9GPBSZQ36C"
+        };
 
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-import { getFirestore } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const appId = 'manga-reader-aio';
 
-const firebaseConfig={
-  apiKey:"AIzaSyAkjGZH-0QvvxvKb4zsEWnyTU0ocjM0Mgk",
-  authDomain:"perry-hub.firebaseapp.com",
-  projectId:"perry-hub",
-  storageBucket:"perry-hub.firebasestorage.app",
-  messagingSenderId:"595059503678",
-  appId:"1:595059503678:web:09f550e59b245880d2d76f"
-};
+        let currentUser = null;
+        let isSyncing = false;
+        let unsubscribeSettings = null;
 
-const app=initializeApp(firebaseConfig);
-const auth=getAuth(app);
-getFirestore(app);
+        const initAuth = async () => {
+            try {
+                await signInAnonymously(auth);
+            } catch (e) { console.error("Auth init failed:", e); }
+        };
+        initAuth();
 
-signInAnonymously(auth);
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                currentUser = user;
+                document.getElementById('footerUserId').innerText = `VAULT: ${user.uid.substring(0, 8)}...`;
+                document.getElementById('userStatus').innerText = user.uid;
+                document.getElementById('dbStatusDot').className = "w-1.5 h-1.5 rounded-full bg-teal-400 animate-pulse";
+                document.getElementById('dbStatusText').innerText = "Cloud Online";
+                document.getElementById('dbStatusText').className = "text-[8px] text-teal-400 font-bold font-mono uppercase";
+                
+                setupRealtimeListener(user.uid);
+            }
+        });
 
-onAuthStateChanged(auth,user=>{
-  if(user) document.getElementById("navUserName").innerText="KURO";
-});
-</script>
+        function setupRealtimeListener(uid) {
+            if (unsubscribeSettings) unsubscribeSettings();
+            const settingsDoc = doc(db, 'artifacts', appId, 'users', uid, 'settings', 'profile');
+            
+            unsubscribeSettings = onSnapshot(settingsDoc, (snapshot) => {
+                if (snapshot.exists()) {
+                    applyCloudSettings(snapshot.data());
+                } else {
+                    setDoc(settingsDoc, { displayName: 'KURO', showNSFW: false, prefLang: 'all', dnsProvider: 'none' }, { merge: true });
+                }
+            }, (error) => {
+                console.error("Firestore sync error:", error);
+                document.getElementById('dbStatusText').innerText = "Sync Error";
+            });
+        }
 
-<script>
-const repos={manga:{url:"https://raw.githubusercontent.com/keiyoushi/extensions/repo/index.min.json",data:[]}}
+        window.saveSettings = async (updates) => {
+            if (!currentUser || isSyncing) return;
+            isSyncing = true;
+            const settingsDoc = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'settings', 'profile');
+            try {
+                await setDoc(settingsDoc, { ...updates, updatedAt: new Date().toISOString() }, { merge: true });
+            } catch (e) { 
+                console.error("Cloud Save failed:", e); 
+            } finally {
+                isSyncing = false;
+            }
+        };
 
-async function fetchRepos(){
-  const r=await fetch(repos.manga.url)
-  repos.manga.data=await r.json()
-  filterSources()
-}
+        function applyCloudSettings(data) {
+            if (data.displayName) {
+                const name = data.displayName;
+                document.getElementById('navUserName').innerText = name;
+                document.getElementById('heroTitle').innerHTML = `PERRY HUB <span class="text-zinc-600">BY ${name}</span>`;
+            }
 
-function filterSources(){
-  const q=searchInput.value.toLowerCase()
-  sourceGrid.innerHTML=repos.manga.data
-    .filter(i=>i.name.toLowerCase().includes(q))
-    .map(i=>`
-      <div class="source-card p-3 cursor-pointer" onclick="loadUrl('${i.sources?.[0]?.baseUrl||""}')">
-        <div class="text-white text-xs font-bold">${i.name}</div>
-        <div class="text-zinc-500 text-[9px] uppercase">${i.lang}</div>
-      </div>
-    `).join("")
-}
+            if (data.showNSFW !== undefined) {
+                window.showNSFW = data.showNSFW;
+                window.updateNSFWUI();
+                if (window.filterSources) window.filterSources();
+            }
+            if (data.prefLang) {
+                const langEl = document.getElementById('prefLang');
+                const filterEl = document.getElementById('langSelect');
+                if (langEl && langEl.value !== data.prefLang) langEl.value = data.prefLang;
+                if (filterEl && filterEl.value !== data.prefLang) filterEl.value = data.prefLang;
+                if (window.filterSources) window.filterSources();
+            }
+            if (data.dnsProvider) {
+                const dnsEl = document.getElementById('dnsProvider');
+                if (dnsEl && dnsEl.value !== data.dnsProvider) {
+                    dnsEl.value = data.dnsProvider;
+                    window.warmDNS(true);
+                }
+            }
+            if (data.lastSelectedUrl && data.lastSelectedUrl !== window.lastSelectedUrl) {
+                window.loadUrl(data.lastSelectedUrl, data.lastSelectedName, true);
+            }
+        }
+    </script>
 
-function loadUrl(url){
-  if(!url)return
-  emptyState.classList.add("hidden")
-  webFrame.classList.remove("hidden")
-  webFrame.src=url
-  closeExplorer()
-}
+    <script>
+        const repos = {
+            manga: { url: "https://raw.githubusercontent.com/keiyoushi/extensions/repo/index.min.json", data: [] },
+            anime: { url: "https://raw.githubusercontent.com/keitaiyomi/anime-repo/refs/heads/repo/index.min.json", data: [] }
+        };
 
-function goHome(){
-  webFrame.src=""
-  webFrame.classList.add("hidden")
-  emptyState.classList.remove("hidden")
-}
+        window.currentTab = 'manga';
+        window.showNSFW = false;
+        window.lastSelectedUrl = '';
+        window.lastSelectedName = '';
+        let settingsOpen = false;
 
-function openExplorer(){explorerModal.classList.remove("translate-y-full")}
-function closeExplorer(){explorerModal.classList.add("translate-y-full")}
+        async function fetchAllRepos() {
+            try {
+                for (const key of Object.keys(repos)) {
+                    const response = await fetch(repos[key].url);
+                    repos[key].data = await response.json();
+                }
+                updateLangSelect();
+                updateStats();
+                filterSources();
+            } catch (e) { console.error("Repo Fetch Error:", e); }
+        }
 
-window.onload=fetchRepos
-</script>
+        window.switchTab = (tab) => {
+            window.currentTab = tab;
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(tab === 'manga' ? 'tabManga' : 'tabAnime').classList.add('active');
+            updateLangSelect();
+            filterSources();
+        };
 
+        function updateLangSelect() {
+            const langSelect = document.getElementById('langSelect');
+            const prefLangSelect = document.getElementById('prefLang');
+            const data = repos[window.currentTab].data;
+            const langs = [...new Set(data.map(item => item.lang))].sort();
+            
+            const optionsHtml = '<option value="all">GLOBAL</option>' + 
+                langs.map(l => `<option value="${l}">${l.toUpperCase()}</option>`).join('');
+                
+            if (langSelect) langSelect.innerHTML = optionsHtml;
+            if (prefLangSelect) prefLangSelect.innerHTML = optionsHtml;
+        }
+
+        window.filterSources = () => {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            const lang = document.getElementById('langSelect').value;
+            const data = repos[window.currentTab].data;
+            const filtered = data.filter(s => {
+                const matchesSearch = s.name.toLowerCase().includes(query);
+                const matchesLang = (lang === 'all' || s.lang === lang);
+                const matchesNSFW = (window.showNSFW || s.nsfw === 0);
+                return matchesSearch && matchesLang && matchesNSFW;
+            });
+            renderGrid(filtered);
+        };
+
+        function renderGrid(data) {
+            const grid = document.getElementById('sourceGrid');
+            grid.innerHTML = data.map(item => {
+                const url = item.sources?.[0]?.baseUrl || '#';
+                const name = item.name.replace(/Tachiyomi: |Aniyomi: /g, '');
+                return `
+                <div class="source-card p-4 rounded cursor-pointer group" onclick="loadUrl('${url}', '${name}')">
+                    <div class="flex justify-between items-start mb-1">
+                        <span class="text-[10px] font-bold text-white truncate uppercase">${name}</span>
+                        ${item.nsfw ? '<span class="text-[8px] text-red-500 font-bold px-1 rounded bg-red-500/5">18+</span>' : ''}
+                    </div>
+                    <span class="text-[8px] font-mono text-zinc-600 truncate block uppercase">${url.replace(/https?:\/\//, '')}</span>
+                    <div class="flex justify-between items-center mt-3">
+                        <span class="text-[8px] font-bold text-zinc-500 uppercase">${item.lang}</span>
+                        <span class="text-[8px] font-mono text-zinc-700">V${item.version}</span>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        window.loadUrl = (url, name, skipSave = false) => {
+            if (!url || url === '#') return;
+            window.lastSelectedUrl = url;
+            window.lastSelectedName = name;
+            
+            updateAio('SOURCE', name, 'yellow');
+            document.getElementById('emptyState').classList.add('hidden');
+            document.getElementById('homeBtn').classList.remove('hidden');
+            
+            const frame = document.getElementById('webFrame');
+            frame.classList.remove('hidden');
+            if (frame.src !== url) frame.src = url;
+            
+            checkHealth(url);
+            closeExplorer();
+
+            if (!skipSave && window.saveSettings) {
+                window.saveSettings({ lastSelectedUrl: url, lastSelectedName: name });
+            }
+        };
+
+        window.goHome = () => {
+            window.lastSelectedUrl = '';
+            window.lastSelectedName = '';
+            const frame = document.getElementById('webFrame');
+            frame.classList.add('hidden');
+            frame.src = ''; 
+            document.getElementById('emptyState').classList.remove('hidden');
+            document.getElementById('homeBtn').classList.add('hidden');
+            updateAio('SYSTEM', 'Standby', 'zinc');
+            if (window.saveSettings) {
+                window.saveSettings({ lastSelectedUrl: '', lastSelectedName: '' });
+            }
+        };
+
+        function updateAio(label, value, color) {
+            const dot = document.getElementById('systemDot');
+            const labelEl = document.getElementById('aioLabel');
+            const valueEl = document.getElementById('aioValue');
+            if (labelEl) labelEl.innerText = label;
+            if (valueEl) valueEl.innerText = value;
+            const colors = { 'yellow': 'bg-yellow-500', 'teal': 'bg-teal-400', 'red': 'bg-red-500', 'zinc': 'bg-zinc-600' };
+            if (dot) dot.className = `w-1.5 h-1.5 rounded-full ${colors[color] || 'bg-zinc-600'} transition-colors duration-500`;
+        }
+
+        window.warmDNS = async (skipSave = false) => {
+            const provider = document.getElementById('dnsProvider').value;
+            if (provider === 'none') {
+                updateAio('SYSTEM', window.lastSelectedName || 'Standby', window.lastSelectedUrl ? 'teal' : 'zinc');
+            } else {
+                updateAio('DNS', 'Linking...', 'yellow');
+                try {
+                    const host = window.lastSelectedUrl ? new URL(window.lastSelectedUrl).hostname : 'google.com';
+                    const isJsonApi = provider.includes('/resolve');
+                    const fetchUrl = isJsonApi ? `${provider}?name=${host}&type=A` : `${provider}?name=${host}`;
+                    await fetch(fetchUrl, { headers: { 'Accept': isJsonApi ? 'application/json' : 'application/dns-json' }, mode: 'cors' });
+                    const dnsName = document.getElementById('dnsProvider').options[document.getElementById('dnsProvider').selectedIndex].text;
+                    updateAio('DNS', `${dnsName}`, 'teal');
+                    setTimeout(() => {
+                        if (window.lastSelectedName) updateAio('SOURCE', window.lastSelectedName, 'teal');
+                    }, 2000);
+                } catch (e) { updateAio('DNS', 'Active', 'teal'); }
+            }
+            if (!skipSave && window.saveSettings) {
+                window.saveSettings({ dnsProvider: provider });
+            }
+        };
+
+        async function checkHealth(url) {
+            try {
+                await fetch(url, { mode: 'no-cors' });
+                updateAio('SOURCE', window.lastSelectedName, 'teal');
+            } catch (e) { updateAio('SOURCE', window.lastSelectedName, 'red'); }
+        }
+
+        window.toggleNSFW = () => {
+            window.showNSFW = !window.showNSFW;
+            window.updateNSFWUI();
+            filterSources();
+            if (window.saveSettings) {
+                window.saveSettings({ showNSFW: window.showNSFW });
+            }
+        };
+
+        window.updateNSFWUI = () => {
+            const toggle = document.getElementById('nsfwToggleUI');
+            const knob = document.getElementById('nsfwKnob');
+            if (!toggle || !knob) return;
+            if (window.showNSFW) {
+                toggle.classList.replace('bg-zinc-800', 'bg-teal-500/20');
+                toggle.classList.add('border', 'border-teal-500/30');
+                knob.classList.replace('left-0.5', 'left-4');
+                knob.classList.replace('bg-zinc-500', 'bg-teal-400');
+            } else {
+                toggle.classList.replace('bg-teal-500/20', 'bg-zinc-800');
+                toggle.classList.remove('border', 'border-teal-500/30');
+                knob.classList.replace('left-4', 'left-0.5');
+                knob.classList.replace('bg-teal-400', 'bg-zinc-500');
+            }
+        }
+
+        window.updatePrefLang = () => {
+            const val = document.getElementById('prefLang').value;
+            document.getElementById('langSelect').value = val;
+            filterSources();
+            if (window.saveSettings) {
+                window.saveSettings({ prefLang: val });
+            }
+        };
+
+        window.toggleSettings = () => {
+            const panel = document.getElementById('settingsPanel');
+            const btn = document.getElementById('configTabBtn');
+            settingsOpen = !settingsOpen;
+            panel.classList.toggle('w-72', settingsOpen);
+            panel.classList.toggle('w-0', !settingsOpen);
+            btn.classList.toggle('text-teal-400', settingsOpen);
+        };
+
+        window.openExplorer = () => document.getElementById('explorerModal').classList.remove('translate-y-full');
+        window.closeExplorer = () => {
+            document.getElementById('explorerModal').classList.add('translate-y-full');
+            if (settingsOpen) toggleSettings();
+        };
+        window.refreshFrame = () => { const f = document.getElementById('webFrame'); if (f.src) f.src = f.src; };
+        function updateStats() { document.getElementById('repoStatus').innerText = `M: ${repos.manga.data.length} // A: ${repos.anime.data.length}`; }
+
+        window.onload = fetchAllRepos;
+    </script>
 </body>
 </html>
