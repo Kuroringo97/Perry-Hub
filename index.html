@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Perry Hub By Kuro</title>
+
+<meta name="description" content="Perry Hub by Kuro — Manga & Anime Vault Interface">
+<meta name="theme-color" content="#00ffcc">
+
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+:root{--accent:#00ffcc;--bg:#0a0a0c;--panel:#111114;--border:rgba(255,255,255,.06)}
+body{background:var(--bg);color:#d1d1d6;font-family:'Inter',sans-serif;overflow-x:hidden}
+.glass-nav{background:rgba(10,10,12,.9);backdrop-filter:blur(16px);border-bottom:1px solid var(--border)}
+.source-card{background:var(--panel);border:1px solid var(--border);transition:.2s}
+.source-card:hover{border-color:rgba(0,255,204,.3);background:#16161a}
+#webFrame{width:100%;height:calc(100vh - 56px);border:none;background:#000}
+</style>
+</head>
+
+<body class="h-screen flex flex-col">
+
+<nav class="h-14 flex items-center justify-between px-4 glass-nav">
+  <button onclick="goHome()" class="text-left">
+    <div class="text-xs font-black text-white uppercase">PERRY HUB</div>
+    <div id="navUserName" class="text-[8px] font-bold text-teal-400 uppercase tracking-widest">CONNECTING</div>
+  </button>
+  <button onclick="openExplorer()" class="px-4 py-2 bg-teal-500/10 text-teal-400 border border-teal-500/20 text-xs font-bold uppercase">
+    VAULT
+  </button>
+</nav>
+
+<main class="flex-1 relative bg-black">
+  <div id="emptyState" class="absolute inset-0 flex flex-col items-center justify-center text-center">
+    <h1 id="heroTitle" class="text-2xl text-white uppercase italic">
+      PERRY HUB <span class="text-zinc-600">BY KURO</span>
+    </h1>
+    <p class="text-[9px] text-zinc-500 uppercase tracking-widest italic mt-2">
+      "May our journey end when we isekai'd by truck-kun"
+    </p>
+    <button onclick="openExplorer()" class="mt-8 px-8 py-2 border border-zinc-800 text-zinc-400 uppercase text-xs">
+      Access Archives
+    </button>
+  </div>
+
+  <iframe
+    id="webFrame"
+    class="hidden"
+    sandbox="allow-scripts allow-forms allow-same-origin allow-popups allow-top-navigation-by-user-activation"
+    referrerpolicy="no-referrer-when-downgrade">
+  </iframe>
+</main>
+
+<div id="explorerModal" class="fixed inset-0 bg-black translate-y-full transition-transform duration-300 z-50">
+  <div class="p-6">
+    <div class="flex justify-between mb-4">
+      <h2 class="text-white font-bold uppercase">Vault</h2>
+      <button onclick="closeExplorer()" class="text-zinc-500 text-xs uppercase">Close</button>
+    </div>
+
+    <input id="searchInput" oninput="filterSources()" placeholder="SEARCH..."
+      class="w-full bg-transparent border-b border-zinc-700 text-white text-xs py-2 outline-none">
+
+    <div id="sourceGrid" class="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"></div>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+import { getFirestore } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+const firebaseConfig={
+  apiKey:"AIzaSyAkjGZH-0QvvxvKb4zsEWnyTU0ocjM0Mgk",
+  authDomain:"perry-hub.firebaseapp.com",
+  projectId:"perry-hub",
+  storageBucket:"perry-hub.firebasestorage.app",
+  messagingSenderId:"595059503678",
+  appId:"1:595059503678:web:09f550e59b245880d2d76f"
+};
+
+const app=initializeApp(firebaseConfig);
+const auth=getAuth(app);
+getFirestore(app);
+
+signInAnonymously(auth);
+
+onAuthStateChanged(auth,user=>{
+  if(user) document.getElementById("navUserName").innerText="KURO";
+});
+</script>
+
+<script>
+const repos={manga:{url:"https://raw.githubusercontent.com/keiyoushi/extensions/repo/index.min.json",data:[]}}
+
+async function fetchRepos(){
+  const r=await fetch(repos.manga.url)
+  repos.manga.data=await r.json()
+  filterSources()
+}
+
+function filterSources(){
+  const q=searchInput.value.toLowerCase()
+  sourceGrid.innerHTML=repos.manga.data
+    .filter(i=>i.name.toLowerCase().includes(q))
+    .map(i=>`
+      <div class="source-card p-3 cursor-pointer" onclick="loadUrl('${i.sources?.[0]?.baseUrl||""}')">
+        <div class="text-white text-xs font-bold">${i.name}</div>
+        <div class="text-zinc-500 text-[9px] uppercase">${i.lang}</div>
+      </div>
+    `).join("")
+}
+
+function loadUrl(url){
+  if(!url)return
+  emptyState.classList.add("hidden")
+  webFrame.classList.remove("hidden")
+  webFrame.src=url
+  closeExplorer()
+}
+
+function goHome(){
+  webFrame.src=""
+  webFrame.classList.add("hidden")
+  emptyState.classList.remove("hidden")
+}
+
+function openExplorer(){explorerModal.classList.remove("translate-y-full")}
+function closeExplorer(){explorerModal.classList.add("translate-y-full")}
+
+window.onload=fetchRepos
+</script>
+
+</body>
+</html>
